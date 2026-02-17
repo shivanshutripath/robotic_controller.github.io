@@ -13,9 +13,6 @@
 
   --accent:#2f6bff;
   --accentSoft: rgba(47, 107, 255, 0.12);
-
-  --accent2:#16a34a;
-  --accent2Soft: rgba(22,163,74,0.12);
 }
 
 *{ box-sizing:border-box; }
@@ -23,8 +20,6 @@ html,body{ height:100%; }
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-
-  /* White top -> Black bottom */
   background: linear-gradient(
     180deg,
     #ffffff 0%,
@@ -43,11 +38,11 @@ body{
   top:0;
   z-index:50;
   backdrop-filter: blur(10px);
-  background: rgba(255,255,255,0.70);
+  background: rgba(255,255,255,0.72);
   border-bottom: 1px solid var(--line);
 }
 .topbarInner{
-  max-width: 1100px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 12px 18px;
   display:flex;
@@ -61,7 +56,6 @@ body{
   color: var(--text);
   font-weight: 900;
   font-size: 13px;
-  letter-spacing: 0.2px;
   cursor:pointer;
   padding: 8px 12px;
   border-radius: 999px;
@@ -100,7 +94,7 @@ body{
 
 /* Hero */
 .heroWrap{
-  max-width: 1100px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 46px 18px 10px;
 }
@@ -116,7 +110,7 @@ body{
   font-size: 56px;
   line-height: 1.03;
   letter-spacing: -1.0px;
-  max-width: 28ch;
+  max-width: 34ch;
 }
 @media (max-width: 720px){
   .heroTitle{ font-size: 38px; letter-spacing: -0.6px; }
@@ -139,7 +133,7 @@ body{
   box-shadow: 0 6px 18px rgba(2,6,23,0.06);
 }
 
-/* Authors block */
+/* Authors */
 .authors{
   margin-top: 6px;
   padding: 14px 16px;
@@ -148,7 +142,7 @@ body{
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
   width: 100%;
-  max-width: 920px;
+  max-width: 980px;
 }
 .authorsLine{
   font-size: 14px;
@@ -202,9 +196,12 @@ body{
   background: rgba(255,255,255,0.8);
 }
 
+.muted{ color: var(--muted); }
+.small{ font-size: 12px; }
+
 /* Main content */
 .content{
-  max-width: 1100px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 16px 18px 70px;
 }
@@ -212,26 +209,22 @@ body{
 /* Sections */
 .section{
   margin-top: 22px;
-  padding: 20px;
+  padding: 22px;
   border-radius: var(--radius);
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: var(--shadow2);
 }
-
 .sectionHeader{
   display:flex;
   flex-direction:column;
   gap: 8px;
   margin-bottom: 12px;
 }
-
-/* Center headings when asked */
 .sectionHeaderCentered{
   align-items:center;
   text-align:center;
 }
-
 .section h2{
   margin:0;
   font-size: 22px;
@@ -266,43 +259,41 @@ body{
   color: var(--text);
 }
 .proseCentered{
-  max-width: 82ch;
+  max-width: 90ch;
   margin: 0 auto;
   text-align: center;
 }
 .prose p{ margin: 0; }
 
-/* Grid */
-.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Grids */
+.grid1{ display:grid; grid-template-columns: 1fr; gap: 14px; }
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 980px){
   .grid2{ grid-template-columns: 1fr; }
 }
 
+/* Generic cards */
 .card{
   border-radius: var(--radius);
   border: 1px solid var(--line);
   background: rgba(255,255,255,0.78);
-  padding: 14px;
+  padding: 16px;
   box-shadow: 0 10px 24px rgba(2,6,23,0.08);
 }
 .cardTop{ display:flex; flex-direction:column; gap:8px; }
 .card h3{ margin:0; font-size: 16px; letter-spacing: -0.2px; }
-
-.muted{ color: var(--muted); }
-.small{ font-size: 12px; }
-
 .tagRow{ display:flex; flex-wrap:wrap; gap:8px; }
 .tag{
   font-size: 11px;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(22,163,74,0.22);
-  background: var(--accent2Soft);
-  color: #064e3b;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(15,23,42,0.04);
+  color: rgba(15,23,42,0.86);
   font-weight: 800;
 }
 
-/* Media frames */
+/* Video frames */
 .videoFrame{
   margin-top: 12px;
   border-radius: 16px;
@@ -320,7 +311,147 @@ body{
   display:block;
 }
 
-/* Footer */
+/* ===== Cropped PDF figure renderer (no empty PDF whitespace) ===== */
+.pdfCropWrap{
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(2,6,23,0.10);
+  overflow: hidden;
+  position: relative;
+  padding: 12px; /* minimal padding around figure */
+}
+
+.pdfCropCanvas{
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Loading/status overlay */
+.pdfCropStatus{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: rgba(15,23,42,0.75);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(6px);
+}
+
+/* Methodology figure card */
+.figureCard{
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.82);
+  box-shadow: 0 14px 36px rgba(2,6,23,0.12);
+  overflow: hidden;
+}
+.figureHeader{
+  padding: 16px 16px 10px;
+}
+.figureTitle{
+  font-weight: 950;
+  letter-spacing: -0.2px;
+  font-size: 16px;
+}
+.figureCaption{
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.figureBody{
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--line);
+  background: rgba(15,23,42,0.02);
+}
+.figureActions{
+  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  justify-content:flex-end;
+}
+
+/* Make methodology figure feel big */
+.figureCropBig{
+  padding: 10px;
+}
+
+/* Plot cards */
+.plotCard{
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.86);
+  box-shadow: 0 14px 36px rgba(2,6,23,0.12);
+  padding: 18px;
+}
+.plotTitle{
+  font-weight: 950;
+  letter-spacing: -0.3px;
+  font-size: 18px;
+}
+.plotSubtitle{
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.plotBullets{
+  margin: 10px 0 14px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.plotGridBig{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.plotItemBig{
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.86);
+  border-radius: 16px;
+  overflow:hidden;
+}
+.plotLabelRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(15,23,42,0.03);
+}
+.plotLabel{
+  font-size: 13px;
+  font-weight: 950;
+  color: rgba(15,23,42,0.86);
+}
+.plotLinks{
+  display:flex;
+  gap: 12px;
+}
+.miniLink{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(47,107,255,0.95);
+  text-decoration: none;
+}
+.miniLink:hover{ text-decoration: underline; }
+.plotBody{
+  padding: 14px;
+  background: rgba(15,23,42,0.02);
+}
+
+/* Plots should be BIG */
+.plotCropBig{
+  padding: 8px;
+}
+
+/* Footer (dark bottom) */
 .footer{
   margin-top: 22px;
   padding: 18px;
