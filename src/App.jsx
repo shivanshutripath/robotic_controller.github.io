@@ -525,7 +525,7 @@ function AppInner() {
           </div>
         </Section>
 
-        <Section id="videos" title="Videos" kicker="Demos">
+        <Section id="videos" title="Demos">
           <div className="grid2">
             {(CONFIG.videos || []).map((v) => (
               <Card key={v.title} title={v.title} desc={v.desc} tags={v.tags}>
@@ -535,7 +535,7 @@ function AppInner() {
           </div>
         </Section>
 
-        <Section id="methodology" title="Methodology" kicker="Figure">
+        <Section id="methodology" title="Methodology">
           <div className="grid1">
             {(CONFIG.methodologyFigures || []).map((f) => (
               <FigureCard key={f.title} title={f.title} caption={f.caption} src={f.src} />
@@ -543,7 +543,7 @@ function AppInner() {
           </div>
         </Section>
 
-        <Section id="plots" title="Plots" kicker="Results">
+        <Section id="plots" title="Results">
           <div className="grid2">
             {(CONFIG.plotCards || []).map((c) => (
               <PlotCard
