@@ -80,6 +80,22 @@ const CONFIG = {
     "the generated controller code using diagnostic feedback from structured test suites. We evaluate the approach across 2D navigation " +
     "tasks and 3D navigation in the Webots simulator, showing substantial improvements in reliability and robustness over one-shot prompting.",
 
+  // ✅ Contributions (left-aligned + nice "designed" bullets in UI below)
+  contributions: [
+    {
+      text: "We propose a novel framework that utilizes an agentic workflow to synthesize robotic controller from high-level and potentially underspecified instructions. Unlike one-shot prompting, our approach incorporates automated, test-driven refinement loop to ensure that the controller meet both task and safety requirements.",
+
+//      text: "We propose a novel framework that utilizes an agentic workflow to synthesize robotic controller from high-level and potentially underspecified instructions. Unlike one-shot prompting, our approach incorporates automated, test-driven refinement loop to ensure that the controller meet both task and safety requirements.",
+    },
+    {
+     // title: "Dual setting controller generation",
+      text: "We build deployable low-level controllers for (i) map-based 2D navigation with occupancy-grid preprocessing and (ii) 3D Webots navigation with an e-puck robot interface.",
+    },
+    {
+      text: "Experimental results on 2D map-based and 3D Webots simulator demonstrate the effectiveness of our approach.",
+    },
+  ],
+
   videos: [
     {
       title: "2D Navigation Demo",
@@ -95,12 +111,22 @@ const CONFIG = {
     },
   ],
 
-  // Use your real file:
+  // Methodology cards (PDF figures)
   methodologyFigures: [
     {
       title: "Agentic Workflow",
       caption: "Test-driven synthesis loop: generate → test → diagnose → repair.",
       src: "/assets/PyTest1.pdf",
+    },
+    {
+      title: "Map preprocessing in 2D",
+      caption: "Occupancy grid + start/goal extraction + planning inputs.",
+      src: "/assets/map_preprocess.pdf",
+    },
+    {
+      title: "Input in 3D webots",
+      caption: "Webots scene + robot constraints + sensor/actuation interface.",
+      src: "/assets/Webots3.pdf",
     },
   ],
 
@@ -109,14 +135,13 @@ const CONFIG = {
       title: "2D Navigation Results",
       subtitle: "Map-based navigation benchmarks",
       bullets: ["Success rate and cumulative success (combined)"],
-      plots: [{ label: "2D: SR + CS", src: "/assets/success_rate.pdf" }], // if combined, point to combined file
-      // If you actually want separate: use plot_2d_sr.pdf and plot_2d_cs.pdf as two entries.
+      plots: [{ label: "2D: SR + CS", src: "/assets/success_rate.pdf" }],
     },
     {
       title: "Webots Results",
       subtitle: "3D simulation benchmarks",
       bullets: ["Success rate and cumulative success (combined)"],
-      plots: [{ label: "Webots: SR + CS", src: "/assets/comp_webots.pdf" }], // if combined, point to combined file
+      plots: [{ label: "Webots: SR + CS", src: "/assets/comp_webots.pdf" }],
     },
   ],
 
@@ -127,8 +152,9 @@ const CONFIG = {
 };
 
 const SECTIONS = [
-  { id: "abstract", label: "Abstract" },
   { id: "videos", label: "Videos" },
+  { id: "abstract", label: "Abstract" },
+  { id: "contributions", label: "Contributions" }, // ✅ NEW
   { id: "methodology", label: "Methodology" },
   { id: "plots", label: "Plots" },
 ];
@@ -217,7 +243,6 @@ function VideoFrame({ media }) {
 
 /**
  * Render first page of a PDF into a canvas and auto-crop whitespace.
- * This makes the figure appear at its "actual" size instead of centered on a huge PDF page.
  */
 function PdfCropped({ src, className = "", maxScale = 3, pad = 14 }) {
   const wrapRef = useRef(null);
@@ -274,7 +299,6 @@ function PdfCropped({ src, className = "", maxScale = 3, pad = 14 }) {
             b = data[i + 2],
             a = data[i + 3];
           if (a === 0) return false;
-          // near-white threshold
           return !(r > 245 && g > 245 && b > 245);
         };
 
@@ -394,12 +418,10 @@ function FigureCard({ title, caption, src }) {
       </div>
       <div className="figureBody">
         <PdfCropped src={src} className="figureCropBig" pad={12} maxScale={3} />
+        {/* Only keep OPEN */}
         <div className="figureActions">
           <a className="btn btnSecondary" href={url} target="_blank" rel="noreferrer">
-            Open PDF
-          </a>
-          <a className="btn btnSecondary" href={url} download>
-            Download
+            Open
           </a>
         </div>
       </div>
@@ -430,12 +452,10 @@ function PlotCard({ title, subtitle, bullets, plots }) {
             <div className="plotItemBig" key={p.label}>
               <div className="plotLabelRow">
                 <div className="plotLabel">{p.label}</div>
+                {/* Only keep OPEN */}
                 <div className="plotLinks">
                   <a className="miniLink" href={url} target="_blank" rel="noreferrer">
                     Open
-                  </a>
-                  <a className="miniLink" href={url} download>
-                    Download
                   </a>
                 </div>
               </div>
@@ -451,6 +471,64 @@ function PlotCard({ title, subtitle, bullets, plots }) {
   );
 }
 
+/** ✅ Designed, left-aligned contribution list (no CSS changes required) */
+function Contributions({ items }) {
+  if (!items?.length) return null;
+  return (
+    <div
+      style={{
+        maxWidth: 980,
+        margin: "0 auto",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gap: 2,
+        }}
+      >
+        {items.map((it, idx) => (
+          <div
+            key={idx}
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              padding: 6,
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 16,
+              background: "rgba(255,255,255,0.03)",
+              textAlign: "left",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 10,
+                display: "grid",
+                placeItems: "center",
+                fontWeight: 700,
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                flex: "0 0 auto",
+              }}
+              aria-hidden="true"
+            >
+              {idx + 1}
+            </div>
+
+            <div style={{ flex: "1 1 auto" }}>
+              <div style={{ fontWeight: 650, marginBottom: 2 }}>{it.title}</div>
+              <div style={{ opacity: 0.86, lineHeight: 1.5 }}>{it.text}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AppInner() {
   const active = useActiveSection(SECTIONS.map((s) => s.id));
   const topRef = useRef(null);
@@ -460,6 +538,10 @@ function AppInner() {
       .map((a) => `${a.name}\u00A0${a.aff ? `^${a.aff}` : ""}`)
       .join(", ");
   }, []);
+
+  const methAgentic = CONFIG.methodologyFigures?.find((f) => f.title === "Agentic Workflow");
+  const meth2d = CONFIG.methodologyFigures?.find((f) => f.title === "Map preprocessing in 2D");
+  const meth3d = CONFIG.methodologyFigures?.find((f) => f.title === "Input in 3D webots");
 
   return (
     <div className="page">
@@ -510,7 +592,11 @@ function AppInner() {
 
           <div className="linkRow">
             {(CONFIG.links || []).map((l) => (
-              <ButtonLink key={l.label} href={l.href} variant={l.label === "Paper" ? "primary" : "secondary"}>
+              <ButtonLink
+                key={l.label}
+                href={l.href}
+                variant={l.label === "Paper" ? "primary" : "secondary"}
+              >
                 {l.label}
               </ButtonLink>
             ))}
@@ -519,27 +605,38 @@ function AppInner() {
       </main>
 
       <div className="content">
+        {/* DEMOS (no outer wrapper; just two cards) */}
+        <div id="videos" className="grid2">
+          {(CONFIG.videos || []).map((v) => (
+            <Card key={v.title} title={v.title} desc={v.desc} tags={v.tags}>
+              <VideoFrame media={v.media} />
+            </Card>
+          ))}
+        </div>
+
+        {/* ABSTRACT below demos */}
         <Section id="abstract" title="Abstract" underlineTitle centerTitle>
           <div className="prose proseCentered">
             <p>{CONFIG.abstract}</p>
           </div>
         </Section>
 
-        <Section id="videos" title="Demos">
-          <div className="grid2">
-            {(CONFIG.videos || []).map((v) => (
-              <Card key={v.title} title={v.title} desc={v.desc} tags={v.tags}>
-                <VideoFrame media={v.media} />
-              </Card>
-            ))}
-          </div>
+        {/* ✅ CONTRIBUTIONS: left-aligned + designed */}
+        <Section id="contributions" title="Contributions" underlineTitle centerTitle={true}>
+          <Contributions items={CONFIG.contributions} />
         </Section>
 
+        {/* METHODOLOGY */}
         <Section id="methodology" title="Methodology">
           <div className="grid1">
-            {(CONFIG.methodologyFigures || []).map((f) => (
-              <FigureCard key={f.title} title={f.title} caption={f.caption} src={f.src} />
-            ))}
+            {methAgentic ? (
+              <FigureCard title={methAgentic.title} caption={methAgentic.caption} src={methAgentic.src} />
+            ) : null}
+          </div>
+
+          <div className="grid2" style={{ marginTop: 18 }}>
+            {meth2d ? <FigureCard title={meth2d.title} caption={meth2d.caption} src={meth2d.src} /> : null}
+            {meth3d ? <FigureCard title={meth3d.title} caption={meth3d.caption} src={meth3d.src} /> : null}
           </div>
         </Section>
 
