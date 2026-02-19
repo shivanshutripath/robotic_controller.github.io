@@ -71,21 +71,21 @@ const CONFIG = {
   ],
   links: [
     { label: "Paper", href: "https://arxiv.org/abs/XXXX.XXXXX" },
-    { label: "Video", href: "https://youtu.be/XXXXXXXXXXX" },
     { label: "Code", href: "https://github.com/your/repo" },
   ],
+
   abstract:
-    "We present a test-driven, agentic framework for synthesizing a deployable low-level robot controller for navigation. " +
-    "Given either a 2D navigation map with robot constraints or a 3D simulation environment, our framework iteratively refines " +
-    "the generated controller code using diagnostic feedback from structured test suites. We evaluate the approach across 2D navigation " +
-    "tasks and 3D navigation in the Webots simulator, showing substantial improvements in reliability and robustness over one-shot prompting.",
+    "In this work, we present a test-driven, agentic framework for synthesizing a deployable low-level robot controller for navigation. " +
+    "Given either a 2D navigation map with robot constraints or a 3D simulation environment, our framework iteratively refines the generated controller code using diagnostic feedback from structured test suites. " +
+    "We propose a dual-tier repair strategy that alternates between prompt-level refinement and direct code editing to satisfy interface compliance, safety constraints, and task success criteria. " +
+    "We evaluate the approach across 2D navigation tasks and 3D navigation in the Webots simulator. Experimental results show that test-driven synthesis substantially improves controller reliability and robustness over one-shot prompting, particularly when initial specifications are underspecified or suboptimal.",
 
   // ✅ Contributions (left-aligned + nice "designed" bullets in UI below)
   contributions: [
     {
-      text: "We propose a novel framework that utilizes an agentic workflow to synthesize robotic controller from high-level and potentially underspecified instructions. Unlike one-shot prompting, our approach incorporates automated, test-driven refinement loop to ensure that the controller meet both task and safety requirements.",
+     // text: "We propose a novel framework that utilizes an agentic workflow to synthesize robotic controller from high-level and potentially underspecified instructions. Unlike one-shot prompting, our approach incorporates automated, test-driven refinement loop to ensure that the controller meet both task and safety requirements.",
 
-//      text: "We propose a novel framework that utilizes an agentic workflow to synthesize robotic controller from high-level and potentially underspecified instructions. Unlike one-shot prompting, our approach incorporates automated, test-driven refinement loop to ensure that the controller meet both task and safety requirements.",
+      text: "We propose a novel framework that utilizes an agentic workflow to synthesize robotic controller from high-level and potentially underspecified instructions. Unlike one-shot prompting, our approach incorporates automated, test-driven refinement loop to ensure that the controller meet both task and safety requirements.",
     },
     {
      // title: "Dual setting controller generation",
@@ -96,22 +96,16 @@ const CONFIG = {
     },
   ],
 
+  // ✅ Single local video for both 2D + 3D
   videos: [
     {
-      title: "2D Navigation Demo",
-      desc: "Map-based navigation with test-driven repair (2D).",
-      media: { type: "youtube", id: "dQw4w9WgXcQ", title: "2D Video" },
-      tags: ["2D", "map", "tests"],
-    },
-    {
-      title: "Webots Demo",
-      desc: "3D navigation in Webots with e-puck robot controller synthesis.",
-      media: { type: "youtube", id: "dQw4w9WgXcQ", title: "Webots Video" },
-      tags: ["3D", "webots", "e-puck"],
+      title: "Demonstration Video",
+      //desc: "Single demo covering both 2D map navigation and 3D Webots experiments.",
+      media: { type: "mp4", src: "/assets/Final_video.mp4", title: "Demo Video" },
+    //  tags: ["2D", "3D", "webots", "tests"],
     },
   ],
 
-  // Methodology cards (PDF figures)
   methodologyFigures: [
     {
       title: "Agentic Workflow",
@@ -152,9 +146,9 @@ const CONFIG = {
 };
 
 const SECTIONS = [
-  { id: "videos", label: "Videos" },
+  { id: "videos", label: "Video" },
   { id: "abstract", label: "Abstract" },
-  { id: "contributions", label: "Contributions" }, // ✅ NEW
+  { id: "contributions", label: "Contributions" },
   { id: "methodology", label: "Methodology" },
   { id: "plots", label: "Plots" },
 ];
@@ -211,29 +205,101 @@ function ButtonLink({ href, children, variant = "primary" }) {
   );
 }
 
-function VideoFrame({ media }) {
+/**
+ * ✅ Smaller video window + first-frame poster thumbnail (no black before play)
+ */
+function VideoFrame({ media, size = "small" }) {
+  const [poster, setPoster] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function makePosterFromFirstFrame() {
+      try {
+        if (!media || media.type !== "mp4") return;
+
+        const src = assetUrl(media.src);
+
+        // off-DOM video to capture frame
+        const v = document.createElement("video");
+        v.crossOrigin = "anonymous";
+        v.preload = "auto";
+        v.muted = true;
+        v.playsInline = true;
+        v.src = src;
+
+        await new Promise((res, rej) => {
+          v.onloadedmetadata = () => res();
+          v.onerror = () => rej(new Error("Failed to load video metadata"));
+        });
+
+        // avoid black at t=0 by seeking slightly ahead
+        const targetTime = Math.min(0.12, Math.max(0, (v.duration || 1) * 0.01));
+
+        await new Promise((res, rej) => {
+          const onSeeked = () => {
+            v.removeEventListener("seeked", onSeeked);
+            res();
+          };
+          v.addEventListener("seeked", onSeeked);
+          v.currentTime = targetTime;
+          v.onerror = () => rej(new Error("Failed to seek video"));
+        });
+
+        const w = v.videoWidth || 1280;
+        const h = v.videoHeight || 720;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(v, 0, 0, w, h);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        if (!cancelled) setPoster(dataUrl);
+      } catch (e) {
+        console.warn("Poster generation failed:", e);
+      }
+    }
+
+    makePosterFromFirstFrame();
+    return () => {
+      cancelled = true;
+    };
+  }, [media?.type, media?.src]);
+
   if (!media) return null;
 
+  if (media.type === "mp4") {
+    const src = assetUrl(media.src);
+    return (
+      <div
+        className={classNames("videoFrame", size === "small" && "videoFrameSmall")}
+        aria-label={media.title || "Video"}
+      >
+        <video controls playsInline preload="metadata" poster={poster || undefined}>
+          <source src={src} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  }
+
+  // (kept for completeness if you ever use youtube again)
   if (media.type === "youtube") {
     const src = `https://www.youtube-nocookie.com/embed/${media.id}`;
     return (
-      <div className="videoFrame" aria-label={media.title || "Video"}>
+      <div
+        className={classNames("videoFrame", size === "small" && "videoFrameSmall")}
+        aria-label={media.title || "Video"}
+      >
         <iframe
           src={src}
           title={media.title || "YouTube video"}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
-      </div>
-    );
-  }
-
-  if (media.type === "mp4") {
-    return (
-      <div className="videoFrame" aria-label={media.title || "Video"}>
-        <video controls playsInline>
-          <source src={media.src} type="video/mp4" />
-        </video>
       </div>
     );
   }
@@ -418,10 +484,9 @@ function FigureCard({ title, caption, src }) {
       </div>
       <div className="figureBody">
         <PdfCropped src={src} className="figureCropBig" pad={12} maxScale={3} />
-        {/* Only keep OPEN */}
         <div className="figureActions">
           <a className="btn btnSecondary" href={url} target="_blank" rel="noreferrer">
-            Open
+            Open PDF
           </a>
         </div>
       </div>
@@ -452,7 +517,6 @@ function PlotCard({ title, subtitle, bullets, plots }) {
             <div className="plotItemBig" key={p.label}>
               <div className="plotLabelRow">
                 <div className="plotLabel">{p.label}</div>
-                {/* Only keep OPEN */}
                 <div className="plotLinks">
                   <a className="miniLink" href={url} target="_blank" rel="noreferrer">
                     Open
@@ -471,34 +535,23 @@ function PlotCard({ title, subtitle, bullets, plots }) {
   );
 }
 
-/** ✅ Designed, left-aligned contribution list (no CSS changes required) */
 function Contributions({ items }) {
   if (!items?.length) return null;
+
   return (
-    <div
-      style={{
-        maxWidth: 980,
-        margin: "0 auto",
-      }}
-    >
-      <div
-        style={{
-          display: "grid",
-          gap: 2,
-        }}
-      >
+    <div style={{ maxWidth: 980, margin: "0 auto", textAlign: "left" }}>
+      <div style={{ display: "grid", gap: 6 }}>
         {items.map((it, idx) => (
           <div
             key={idx}
             style={{
               display: "flex",
-              gap: 12,
+              gap: 10,
               alignItems: "flex-start",
-              padding: 6,
+              padding: 10,
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 16,
               background: "rgba(255,255,255,0.03)",
-              textAlign: "left",
             }}
           >
             <div
@@ -520,7 +573,7 @@ function Contributions({ items }) {
 
             <div style={{ flex: "1 1 auto" }}>
               <div style={{ fontWeight: 650, marginBottom: 2 }}>{it.title}</div>
-              <div style={{ opacity: 0.86, lineHeight: 1.5 }}>{it.text}</div>
+              <div style={{ opacity: 0.86, lineHeight: 1.45 }}>{it.text}</div>
             </div>
           </div>
         ))}
@@ -605,28 +658,25 @@ function AppInner() {
       </main>
 
       <div className="content">
-        {/* DEMOS (no outer wrapper; just two cards) */}
-        <div id="videos" className="grid2">
+        {/* Single Video Card */}
+        <div id="videos" className="grid1">
           {(CONFIG.videos || []).map((v) => (
             <Card key={v.title} title={v.title} desc={v.desc} tags={v.tags}>
-              <VideoFrame media={v.media} />
+              <VideoFrame media={v.media} size="small" />
             </Card>
           ))}
         </div>
 
-        {/* ABSTRACT below demos */}
         <Section id="abstract" title="Abstract" underlineTitle centerTitle>
           <div className="prose proseCentered">
             <p>{CONFIG.abstract}</p>
           </div>
         </Section>
 
-        {/* ✅ CONTRIBUTIONS: left-aligned + designed */}
         <Section id="contributions" title="Contributions" underlineTitle centerTitle={true}>
           <Contributions items={CONFIG.contributions} />
         </Section>
 
-        {/* METHODOLOGY */}
         <Section id="methodology" title="Methodology">
           <div className="grid1">
             {methAgentic ? (
