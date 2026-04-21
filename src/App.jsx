@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "./App.css";
@@ -59,7 +59,6 @@ class ErrorBoundary extends React.Component {
 
 const CONFIG = {
   title: "Test-Driven Agentic Framework for Reliable Robot Controller",
-  venueLine: "Submitted to IROS 2026",
   authors: [
     { name: "Shivanshu Tripathi", aff: "1" },
     { name: "Reza Akbarian Bafghi", aff: "2" },
@@ -186,10 +185,6 @@ function scrollToId(id) {
   if (!el) return;
   const top = el.getBoundingClientRect().top + window.scrollY - 84;
   window.scrollTo({ top, behavior: "smooth" });
-}
-
-function Pill({ children }) {
-  return <span className="pill">{children}</span>;
 }
 
 function ButtonLink({ href, children, variant = "primary" }) {
@@ -586,12 +581,6 @@ function AppInner() {
   const active = useActiveSection(SECTIONS.map((s) => s.id));
   const topRef = useRef(null);
 
-  const authorLine = useMemo(() => {
-    return (CONFIG.authors || [])
-      .map((a) => `${a.name}\u00A0${a.aff ? `^${a.aff}` : ""}`)
-      .join(", ");
-  }, []);
-
   const methAgentic = CONFIG.methodologyFigures?.find((f) => f.title === "Agentic Workflow");
   const meth2d = CONFIG.methodologyFigures?.find((f) => f.title === "Map preprocessing in 2D");
   const meth3d = CONFIG.methodologyFigures?.find((f) => f.title === "Input in 3D webots");
@@ -625,23 +614,6 @@ function AppInner() {
       <main ref={topRef} className="heroWrap">
         <div className="hero heroCentered">
           <h1 className="heroTitle">{CONFIG.title}</h1>
-
-          <div className="pillRow">
-            {(CONFIG.venueLine || "").split("•").map((x) => (
-              <Pill key={x.trim()}>{x.trim()}</Pill>
-            ))}
-          </div>
-
-          <div className="authors">
-            <div className="authorsLine">{authorLine}</div>
-            <div className="affiliations">
-              {(CONFIG.affiliations || []).map((a) => (
-                <div key={a.id} className="aff">
-                  <span className="sup">^{a.id}</span> {a.text}
-                </div>
-              ))}
-            </div>
-          </div>
 
           <div className="linkRow">
             {(CONFIG.links || []).map((l) => (
@@ -709,10 +681,6 @@ function AppInner() {
             <div>
               <div className="footerTitle">{CONFIG.title}</div>
               <div className="muted small">{CONFIG.footer.copyright}</div>
-            </div>
-            <div className="footerRight">
-              <div className="muted small">Contact</div>
-              <div className="footerContact">{CONFIG.footer.contact}</div>
             </div>
           </div>
         </footer>
