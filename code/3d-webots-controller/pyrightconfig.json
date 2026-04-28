@@ -1,0 +1,16 @@
+{
+  "include": [
+    "controllers",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules"
+  ],
+  "extraPaths": [
+    "/Applications/Webots.app/Contents/lib/controller/python"
+  ],
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic"
+}
+

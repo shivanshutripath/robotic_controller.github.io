@@ -1,0 +1,22 @@
+[
+  {
+    "nodeid": "tests/test_05_episode_progress.py::test_episode_makes_progress",
+    "message": "AssertionError: No real progress toward goal: d0=520.0, dmin=401.0\nassert 401.00498750015566 <= (0.7 * 520.0)",
+    "longrepr": ""
+  },
+  {
+    "nodeid": "tests/test_06_episode_reach_goal.py::test_episode_reaches_goal",
+    "message": "AssertionError: Did not reach goal. min_goal_dist=401.00\nassert False\n +  where False = EpisodeMetrics(reached_goal=False, steps=50, time_sec=2.5, collisions=0, min_goal_dist=401.00498750015566, mean_speed=48.18793359615604).reached_goal",
+    "longrepr": ""
+  },
+  {
+    "nodeid": "tests/test_07_regressions_and_contracts.py::test_no_scipy",
+    "message": "",
+    "longrepr": ""
+  },
+  {
+    "nodeid": "tests/test_07_regressions_and_contracts.py::test_no_raise_runtimeerror",
+    "message": "",
+    "longrepr": ""
+  }
+]

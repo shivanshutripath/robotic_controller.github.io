@@ -1,0 +1,52 @@
+```diff
+--- controller_template.py	2023-10-10 12:34:56
++++ controller_template.py	2023-10-10 13:45:12
+@@ -55,6 +55,15 @@
+    - If Goal set, replan; else clear path.
+ 
+ Keyboard:
+-    - 'C' clears Start and Goal and path. Robot must stop.
+-    - 'P' toggles path drawing.
++   - 'C' clears Start and Goal and path. Robot must stop.
++   - 'P' toggles path drawing.
+ 
+ Motion gating:
+-    - Robot MUST remain stopped until Start and Goal set and path non-empty.
++   - Robot MUST remain stopped until Start and Goal set and path non-empty.
+ 
+ UI feedback (MUST show):
+-    - Start marker, Goal marker, Path (if enabled),
+-    - Instruction string:
+-      "LMB: set start then goal | RMB: set start | C: clear | P: toggle path"
+-    - Show Start/Goal coords and path length.
++   - Start marker, Goal marker, Path (if enabled),
++   - Instruction string:
++     "LMB: set start then goal | RMB: set start | C: clear | P: toggle path"
++   - Show Start/Goal coords and path length.
+ 
+ CONTROL + SAFETY
+@@ -88,3 +97,22 @@
+     - Each frame draw: map, optional path, goal, robot, sensor cloud, debug text.
+     Show a warning if path is empty.
+ 
++TEST API REQUIREMENT
++def run_episode(max_steps: int, dt: float, start_xy, goal_xy, headless: bool = True) -> dict:
++    """
++    Runs a closed-loop episode for a maximum number of steps.
++
++    Args:
++    - max_steps: Maximum number of simulation steps.
++    - dt: Time step in seconds.
++    - start_xy: Starting position as a tuple (x, y).
++    - goal_xy: Goal position as a tuple (x, y).
++    - headless: If true, rendering is skipped.
++
++    Returns:
++    - A dictionary with:
++      - 'positions': list of [x, y] positions.
++      - 'speeds': list of speeds.
++      - 'collisions': number of collisions.
++      - 'goal': goal position [x, y].
++      - 'dt': time step used.
++    """
+```

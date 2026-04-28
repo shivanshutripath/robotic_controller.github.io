@@ -70,7 +70,19 @@ const CONFIG = {
   ],
   links: [
     { label: "Paper", href: "https://arxiv.org/abs/XXXX.XXXXX" },
-    { label: "Code", href: "https://github.com/your/repo" },
+    { label: "Code", href: "#code" },
+  ],
+  codeCases: [
+    {
+      title: "2D Controller",
+      href: "https://github.com/shivanshutripath/robotic_controller.github.io/tree/main/code/2d-controller",
+      path: "code/2d-controller",
+    },
+    {
+      title: "3D Webots Controller",
+      href: "https://github.com/shivanshutripath/robotic_controller.github.io/tree/main/code/3d-webots-controller",
+      path: "code/3d-webots-controller",
+    },
   ],
 
   abstract:
@@ -145,6 +157,7 @@ const CONFIG = {
 };
 
 const SECTIONS = [
+  { id: "code", label: "Code" },
   { id: "abstract", label: "Abstract" },
   { id: "contributions", label: "Contributions" },
   { id: "methodology", label: "Methodology" },
@@ -187,12 +200,13 @@ function scrollToId(id) {
 }
 
 function ButtonLink({ href, children, variant = "primary" }) {
+  const isInPageLink = String(href || "").startsWith("#");
   return (
     <a
       className={classNames("btn", variant === "secondary" && "btnSecondary")}
       href={href}
-      target="_blank"
-      rel="noreferrer"
+      target={isInPageLink ? undefined : "_blank"}
+      rel={isInPageLink ? undefined : "noreferrer"}
     >
       {children}
     </a>
@@ -629,6 +643,23 @@ function AppInner() {
       </main>
 
       <div className="content">
+        <Section id="code" title="Code" underlineTitle centerTitle>
+          <div className="grid2">
+            {(CONFIG.codeCases || []).map((c) => (
+              <Card key={c.title} title={c.title}>
+                <p className="muted" style={{ wordBreak: "break-all" }}>
+                  {c.path}
+                </p>
+                <div className="linkRow">
+                  <ButtonLink href={c.href} variant="secondary">
+                    Open Code
+                  </ButtonLink>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </Section>
+
         <Section id="abstract" title="Abstract" underlineTitle centerTitle>
           <div className="prose proseCentered">
             <p>{CONFIG.abstract}</p>
