@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "AI-agent",
+			"path": "../.."
+		},
+		{
+			"name": "obstacle_avoidance",
+			"path": "../../../Documents/obstacle_avoidance"
+		}
+	],
+	"settings": {}
+}

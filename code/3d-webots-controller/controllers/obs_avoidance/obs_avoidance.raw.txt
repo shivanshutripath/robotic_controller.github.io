@@ -1,0 +1,188 @@
+import re, heapq, math
+
+def parse_world(world_text, params_text=""):
+    start_regex = re.compile(r"E-puck\s*{[^}]*translation\s+([-.\d]+)\s+([-.\d]+)", re.MULTILINE)
+    goal_regex = re.compile(r"DEF\s+GOAL\s+Solid\s*{[^}]*translation\s+([-.\d]+)\s+([-.\d]+)", re.MULTILINE)
+    wooden_box_regex = re.compile(r"WoodenBox\s*{[^}]*translation\s+([-.\d]+)\s+([-.\d]+)[^}]*?size\s+([-.\d]+)\s+([-.\d]+)", re.MULTILINE)
+    rock_regex = re.compile(r"Rock\s*{[^}]*translation\s+([-.\d]+)\s+([-.\d]+)[^}]*?scale\s+([-.\d]+)", re.MULTILINE)
+
+    start_match = start_regex.search(world_text)
+    goal_match = goal_regex.search(world_text)
+    wooden_box_matches = wooden_box_regex.findall(world_text)
+    rock_matches = rock_regex.findall(world_text)
+
+    start = {"x": float(start_match.group(1)), "y": float(start_match.group(2))}
+    goal = {"x": float(goal_match.group(1)), "y": float(goal_match.group(2))}
+
+    obstacles = [
+        {"x": float(wx), "y": float(wy), "sx": float(sx), "sy": float(sy)} 
+        for wx, wy, sx, sy in wooden_box_matches
+    ]
+    obstacles.extend(
+        {"x": float(rx), "y": float(ry), "sx": float(scale * 0.15), "sy": float(scale * 0.15)} 
+        for rx, ry, scale in rock_matches
+    )
+
+    margin = 0.1
+    x_min = min(start["x"], goal["x"]) - margin
+    x_max = max(start["x"], goal["x"]) + margin
+    y_min = min(start["y"], goal["y"]) - margin
+    y_max = max(start["y"], goal["y"]) + margin
+    bounds = [x_min, x_max, y_min, y_max]
+
+    return {
+        "plane": "xy",
+        "start": start,
+        "goal": goal,
+        "obstacles": obstacles,
+        "bounds": bounds
+    }
+
+def build_grid(bounds, obstacles, resolution=0.1, inflation=0.0):
+    x_min, x_max, y_min, y_max = bounds
+    width = math.ceil((x_max - x_min) / resolution)
+    height = math.ceil((y_max - y_min) / resolution)
+    
+    grid = [[0 for _ in range(width)] for _ in range(height)]
+
+    for obstacle in obstacles:
+        obs_x_min = (obstacle["x"] - obstacle["sx"] / 2 - x_min) / resolution
+        obs_x_max = (obstacle["x"] + obstacle["sx"] / 2 - x_min) / resolution
+        obs_y_min = (obstacle["y"] - obstacle["sy"] / 2 - y_min) / resolution
+        obs_y_max = (obstacle["y"] + obstacle["sy"] / 2 - y_min) / resolution
+
+        for i in range(math.floor(obs_y_min), math.ceil(obs_y_max)):
+            for j in range(math.floor(obs_x_min), math.ceil(obs_x_max)):
+                if 0 <= i < height and 0 <= j < width:
+                    grid[i][j] = 1
+
+    return grid
+
+def astar(grid, start_cell, goal_cell):
+    def heuristic(cell1, cell2):
+        return math.sqrt((cell1[0] - cell2[0])**2 + (cell1[1] - cell2[1])**2)
+
+    def get_neighbors(cell):
+        neighbors = []
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        for d in directions:
+            neighbor = (cell[0] + d[0], cell[1] + d[1])
+            if 0 <= neighbor[0] < len(grid) and 0 <= neighbor[1] < len(grid[0]):
+                neighbors.append(neighbor)
+        return neighbors
+
+    open_set = []
+    heapq.heappush(open_set, (0, start_cell))
+    came_from = {}
+    g_score = {start_cell: 0}
+    f_score = {start_cell: heuristic(start_cell, goal_cell)}
+
+    while open_set:
+        _, current = heapq.heappop(open_set)
+
+        if current == goal_cell:
+            path = []
+            while current in came_from:
+                path.append(current)
+                current = came_from[current]
+            path.append(start_cell)
+            return path[::-1]
+
+        for neighbor in get_neighbors(current):
+            if grid[neighbor[0]][neighbor[1]] == 1:
+                continue
+            
+            tentative_g_score = g_score[current] + heuristic(current, neighbor)
+
+            if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g_score
+                f_score[neighbor] = tentative_g_score + heuristic(neighbor, goal_cell)
+                if not any(neighbor == item[1] for item in open_set):
+                    heapq.heappush(open_set, (f_score[neighbor], neighbor))
+
+    return []
+
+def compute_wheel_speeds(pose_xy, yaw, waypoint_xy, prox):
+    if any(prox[i] > 100 for i in [0, 1, 6, 7]):
+        return -2.0, -1.0
+
+    dx = waypoint_xy[0] - pose_xy[0]
+    dy = waypoint_xy[1] - pose_xy[1]
+    angle_to_waypoint = math.atan2(dy, dx)
+    angle_diff = angle_to_waypoint - yaw
+
+    if angle_diff > math.pi:
+        angle_diff -= 2 * math.pi
+    elif angle_diff < -math.pi:
+        angle_diff += 2 * math.pi
+
+    kp = 0.5
+    max_speed = 6.28
+
+    left_speed = max_speed - kp * angle_diff
+    right_speed = max_speed + kp * angle_diff
+
+    return left_speed, right_speed
+
+def run_episode(...):
+    from controller import Supervisor
+    supervisor = Supervisor()
+
+    timestep = int(supervisor.getBasicTimeStep())
+    robot = supervisor.getFromDef("E-puck")
+    translation_field = robot.getField("translation")
+    rotation_field = robot.getField("rotation")
+    goal_translation = supervisor.getFromDef("GOAL").getField("translation").getSFVec3f()
+
+    prox_sensors = [supervisor.getDevice(f'ps{i}') for i in range(8)]
+    for prox in prox_sensors:
+        prox.enable(timestep)
+
+    current_translation = translation_field.getSFVec3f()
+    current_rotation = rotation_field.getSFRotation()
+    current_pose = (current_translation[0], current_translation[1])
+    yaw = current_rotation[3]
+
+    path = [...] # Path obtained from the A* algorithm
+
+    success = False
+    steps = 0
+    for waypoint in path:
+        while supervisor.step(timestep) != -1:
+            current_translation = translation_field.getSFVec3f()
+            current_rotation = rotation_field.getSFRotation()
+            current_pose = (current_translation[0], current_translation[1])
+            yaw = current_rotation[3]
+            prox_values = [sensor.getValue() for sensor in prox_sensors]
+            
+            if math.sqrt((goal_translation[0] - current_pose[0])**2 + (goal_translation[1] - current_pose[1])**2) < 0.05:
+                success = True
+                break
+
+            left_speed, right_speed = compute_wheel_speeds(current_pose, yaw, waypoint, prox_values)
+            robot.getMotor('left wheel motor').setVelocity(left_speed)
+            robot.getMotor('right wheel motor').setVelocity(right_speed)
+            steps += 1
+
+    supervisor.simulationSetMode(Supervisor.SIMULATION_MODE_PAUSE)
+    return {"success": success, "steps": steps}
+
+def main():
+    from controller import Supervisor
+    supervisor = Supervisor()
+    world_text = supervisor.getWorld()
+    parsed_world = parse_world(world_text)
+
+    grid = build_grid(parsed_world['bounds'], parsed_world['obstacles'])
+    start_cell = (int((parsed_world['start']['x'] - parsed_world['bounds'][0]) / 0.1),
+                  int((parsed_world['start']['y'] - parsed_world['bounds'][2]) / 0.1))
+    goal_cell = (int((parsed_world['goal']['x'] - parsed_world['bounds'][0]) / 0.1),
+                 int((parsed_world['goal']['y'] - parsed_world['bounds'][2]) / 0.1))
+
+    path = astar(grid, start_cell, goal_cell)
+    success_result = run_episode(...)
+    print(success_result)
+
+if __name__ == "__main__":
+    main()

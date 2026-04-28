@@ -1,0 +1,74 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/factory/containers/protos/WoodenBox.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/CircleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/rocks/protos/Rock.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.32006348397500717 -0.17745781921829673 0.930627792742118 4.09429616978513
+  position 1.1107185443990915 1.7861129240628397 1.5145626325758246
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+CircleArena {
+}
+WoodenBox {
+  translation 0.194803 0.0218687 0.05
+  name "wooden box(3)"
+  size 0.2 0.2 0.1
+}
+Rock {
+  translation -0.533427 -0.130641 1.98861e-14
+  name "rock(1)"
+  scale 2
+}
+E-puck {
+  translation -0.430503 0.554463 -6.40163e-05
+  rotation -1.7192130874573718e-10 1.2203390423662753e-09 1 -2.8631165352416295
+  controller "<extern>"
+  customData "obstacle_avoidance"
+  supervisor TRUE
+  camera_fieldOfView 0.8
+  camera_height 70
+}
+WoodenBox {
+  translation -0.445949 0.287385 0.05
+  size 0.2 0.2 0.1
+}
+Rock {
+  translation 0.0198996 0.304066 -9.9653e-15
+  scale 1.5
+}
+WoodenBox {
+  translation 0.211645 -0.579748 0.05
+  name "wooden box(2)"
+  size 0.1 0.1 0.1
+}
+WoodenBox {
+  translation 0.42092 0.51275 0.05
+  name "wooden box(1)"
+  size 0.2 0.2 0.2
+}
+DEF GOAL Solid {
+  translation 0.54125 -0.0579839 0.02
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0 0
+        }
+      }
+      geometry Sphere {
+        radius 0.05
+      }
+    }
+  ]
+  name "GOAL"
+}

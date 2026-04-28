@@ -1,0 +1,26 @@
+# controller_template.py
+
+from string import Template
+
+PROMPT = Template(r"""
+Generate a single Webots Python controller obs_avoidance.py for my 
+world worlds/empty.wbt (R2025a). The robot is E-puck with 
+supervisor TRUE and controller <extern>. Use Supervisor() (not Robot) 
+and read everything from the loaded world (no hard-coded obstacles/start/goal). 
+In this world, motion is on the X-Y plane and height is Z. Find the goal as 
+the Solid whose name is "GOAL" (also support DEF GOAL if present). Extract 
+obstacles from WoodenBox (use its size field) and Rock (use its scale 
+as radius/diameter approximation). Build an occupancy grid, run A* from robot 
+pose to goal, then drive the e-puck along waypoints using real pose 
+from the robot node translation+rotation (no dead-reckoning). 
+Add reactive obstacle avoidance + recovery (back up + turn) to prevent 
+getting stuck. Print + write run_result.json. Keep the controller alive 
+at the end so extern doesn't disconnect. Output only the full code.
+
+============================================================
+AUTO_REPAIR (filled by loop_agent)
+============================================================
+$AUTO_REPAIR
+
+Now output the complete controller Python code (single file).
+""")

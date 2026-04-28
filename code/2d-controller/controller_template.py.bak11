@@ -1,0 +1,294 @@
+# controller_template.py
+from string import Template
+
+PROMPT = Template(r"""
+Generate a COMPLETE Python file named controller.py.
+
+===========================================================================
+OUTPUT FORMAT (STRICT)
+===========================================================================
+- Output ONLY raw Python code
+- NO markdown fences (no ```)
+- NO explanations before or after
+- NO comments like "Here is the code"
+
+===========================================================================
+TESTS THAT MUST PASS
+===========================================================================
+1. test_allowed_imports_only: All imports at TOP-LEVEL only, none inside functions/classes
+2. test_occmap2d_is_safe: is_occupied must return Python bool (True/False), not np.bool_
+3. test_nearest_free_returns_free: Must return Python (int, int), not numpy types
+4. test_plan_path_returns_pixel_path: Path points must be in free space (wall+gap synthetic test)
+5. test_episode_makes_progress: dmin <= 0.7 * d0 in 400 steps
+6. test_episode_reaches_goal: Reach within 20px of goal in 2500 steps
+
+===========================================================================
+HARD CONTRACT (OVERRIDES AUTO_REPAIR_RULES)
+===========================================================================
+If AUTO_REPAIR_RULES conflicts with ANYTHING here, IGNORE AUTO_REPAIR_RULES.
+
+(1) Allowed imports (ONLY these, ONLY at top of file):
+import math
+import heapq
+import json
+import pygame
+import numpy as np
+from robot import Graphics, Robot, Ultrasonic
+
+- NO other imports anywhere.
+- ABSOLUTELY NO imports inside any def/class (static test will fail).
+- Do NOT use scipy (not installed).
+- Do NOT use any other modules.
+
+(2) Required signatures (do NOT rename parameters):
+def nearest_free(map2d, x, y, max_r=300):
+def plan_path(map2d, start, goal, cell):
+def run_episode(max_steps:int, dt:float, start_xy=None, goal_xy=None, headless:bool=True) -> dict:
+
+(3) Stability requirement:
+- run_episode MUST NOT raise exceptions (no RuntimeError).
+- If no path exists, fallback to waypoints=[start, goal] and still run goal-directed control.
+
+(4) Planner must pass the unit wall+gap test:
+- With occ shape (80,80), wall at x=40, gap y=35..44, cell=4, start=(10,10), goal=(70,70),
+  plan_path MUST return a non-empty list of free-space pixel points (Python int coords).
+- Endpoints: first point within 3*cell pixels of start, last point within 3*cell pixels of goal.
+
+(5) Type requirements:
+- OccMap2D.is_occupied returns Python bool via bool(...)
+- nearest_free returns Python ints (int,int) always
+- plan_path returns list of (int,int) Python ints (not np.int64)
+
+===========================================================================
+AUTO REPAIR RULES (may be replaced by loop, but cannot violate HARD CONTRACT)
+===========================================================================
+$AUTO_REPAIR_RULES
+
+===========================================================================
+IMPORTS - CRITICAL RULES (repeated for emphasis)
+===========================================================================
+ALL imports MUST be at the TOP of the file, BEFORE any function or class.
+DO NOT put any import statement inside def or class.
+
+After imports, add these bare references (no import keyword), exactly:
+heapq.heappush
+math.pi
+np.zeros
+pygame.init
+json.loads
+
+===========================================================================
+CONSTANTS
+===========================================================================
+MAP_IMG         = "$MAP_IMG"
+PARAMS_JSON     = "$PARAMS_JSON"
+ROBOT_IMG       = "$ROBOT_IMG"
+AXLE_LENGTH_PX  = $AXLE_LENGTH_PX
+SENSOR_RANGE_PX = $SENSOR_RANGE_PX
+SENSOR_FOV_DEG  = $SENSOR_FOV_DEG
+N_RAYS          = $N_RAYS
+LOOKAHEAD       = $LOOKAHEAD
+STOP_DIST       = $STOP_DIST
+SLOW_DIST       = $SLOW_DIST
+sensor_range    = (SENSOR_RANGE_PX, math.radians(SENSOR_FOV_DEG))
+
+===========================================================================
+CORE REQUIREMENT FOR PASSING THE LAST 2 TESTS (PROGRESS + REACH GOAL)
+===========================================================================
+Your episode MUST be goal-directed and path-feasible:
+- Prefer selecting start/goal such that A* returns a non-empty path.
+- Follow waypoints robustly (pure pursuit with lookahead).
+- Keep forward motion most of the time (not spinning forever).
+- Obstacle avoidance must not prevent long-range progress.
+- If planner fails, still move toward goal with conservative obstacle avoidance (no exceptions).
+
+===========================================================================
+OccMap2D CLASS - CRITICAL TYPE REQUIREMENTS
+===========================================================================
+Implement exactly these semantics:
+- Store occ as boolean numpy array (dtype=bool)
+- height, width must match occ indexing occ[y,x]
+- is_occupied returns Python bool, not np.bool_
+
+Example structure (you may improve but must preserve types):
+class OccMap2D:
+    def __init__(self, occ, inflate_px=0):
+        self.occ = occ.astype(bool)
+        self.height, self.width = self.occ.shape
+        self.inflate_px = int(max(0, inflate_px))
+
+    def is_occupied(self, x, y) -> bool:
+        ix, iy = int(x), int(y)
+        if ix < 0 or iy < 0 or ix >= self.width or iy >= self.height:
+            return True
+        r = self.inflate_px
+        if r > 0:
+            for dy in range(-r, r + 1):
+                yy = iy + dy
+                if yy < 0 or yy >= self.height:
+                    continue
+                for dx in range(-r, r + 1):
+                    xx = ix + dx
+                    if 0 <= xx < self.width and self.occ[yy, xx]:
+                        return True
+            return False
+        return bool(self.occ[iy, ix])
+
+===========================================================================
+nearest_free FUNCTION - CRITICAL TYPE + SIGNATURE REQUIREMENTS
+===========================================================================
+You MUST implement this signature exactly:
+def nearest_free(map2d, x, y, max_r=300):
+
+Rules:
+- Must accept keyword max_r.
+- Must return Python (int,int), not numpy ints.
+- Deterministic ring/border search around (x,y).
+- If (x,y) is already free -> return it (clamped) as ints.
+- If nothing found within max_r, return a clamped safe fallback (ints).
+
+===========================================================================
+wrap_pi FUNCTION
+===========================================================================
+def wrap_pi(a):
+    return ((a + math.pi) % (2 * math.pi)) - math.pi
+
+===========================================================================
+plan_path FUNCTION (A* on coarse grid) - MUST PASS wall+gap test
+===========================================================================
+You MUST implement this signature exactly:
+def plan_path(map2d, start, goal, cell):
+
+Required behavior:
+- cell = max(1, int(cell))
+- Build a grid (gw = width//cell, gh = height//cell). If too small -> return []
+- Define:
+  to_grid(px,py) -> (gx,gy) using //cell clamped
+  to_pix(gx,gy)  -> (px,py) = (gx*cell + cell//2, gy*cell + cell//2) as Python ints
+  is_free(g)     -> checks map2d.is_occupied(center_px) is False
+
+- Use 8-connected neighbors.
+- A* must find path for wall+gap case. Use Euclidean heuristic.
+- Reconstruct path in grid then convert to pixel centers.
+- Ensure returned list:
+  * length >= 2 when success
+  * each point is Python int tuple
+  * each point is free space (validate before returning; if any occupied, you must fix logic)
+  * first point within 3*cell of start, last point within 3*cell of goal
+
+Return [] only when truly no path exists.
+
+===========================================================================
+run_episode FUNCTION (CRITICAL FOR PASSING)
+===========================================================================
+Implement run_episode(max_steps, dt, start_xy=None, goal_xy=None, headless=True) returning dict:
+{
+  "positions": [...],
+  "speeds": [...],
+  "collisions": 0,
+  "goal": [int gx, int gy],
+  "dt": float(dt)
+}
+
+Hard rules:
+- collisions must stay 0
+- positions and speeds same length
+- Must reach within 20px of goal in <=2500 steps
+- Must make progress in first 400 steps: dmin <= 0.7*d0
+- MUST NOT raise exceptions
+
+MANDATORY STRATEGY:
+1) Initialize pygame and map graphics:
+   pygame.init()
+   map_img = pygame.image.load(MAP_IMG)
+   W,H = map_img.get_width(), map_img.get_height()
+   gfx = Graphics((H, W), ROBOT_IMG, MAP_IMG)
+
+2) Build occupancy grid from gfx.map_img:
+   arr = pygame.surfarray.array3d(gfx.map_img)   # shape (W,H,3)
+   arr = np.transpose(arr, (1,0,2))              # shape (H,W,3)
+   gray = 0.2126*arr[:,:,0] + 0.7152*arr[:,:,1] + 0.0722*arr[:,:,2]
+
+3) Load params.json safely with defaults:
+   obstacle_is_dark default True, threshold default 128, cell default 6, inflate_px default 2
+   Clamp cell>=1, inflate_px in [0..8], threshold in [0..255]
+   If ratio of occupied too extreme (<0.02 or >0.98), flip obstacle_is_dark once.
+
+4) Create map2d = OccMap2D(occ, inflate_px)
+
+5) PATH-FEASIBLE start/goal selection:
+   - If start_xy/goal_xy provided: use nearest_free around them.
+   - Else choose from candidate pool + fixed-seed random sampling.
+   - MUST try up to a fixed number of attempts (e.g., 40) to find a pair with len(plan_path)>=2.
+   - Deterministic: rng = np.random.RandomState(0).
+   - Priority is PATH EXISTS; separation is secondary.
+
+   If none found:
+   - Do NOT raise.
+   - Set start=nearest_free(map2d, 0.1W, 0.1H), goal=nearest_free(map2d, 0.9W, 0.9H)
+   - Use waypoints=[start, goal] and proceed.
+
+6) Robot init:
+   robot = Robot(start, AXLE_LENGTH_PX)
+   robot.heading = math.atan2(goal[1]-start[1], goal[0]-start[0])
+
+7) Sensor:
+   ultrasonic = Ultrasonic(sensor_range, map2d, gfx.map, n_rays=N_RAYS)
+
+8) Path following control (pure pursuit):
+   - waypoints = path if len(path)>=2 else [start, goal]
+   - Maintain wp_idx; advance while distance to waypoint < LOOKAHEAD.
+   - Choose target = waypoint at wp_idx (or goal if close).
+   - herr = wrap_pi(target_angle - heading)
+   - w = clamp(KP*herr, -W_MAX, W_MAX)
+   - v base around 60..90 px/s; reduce when turning and near obstacles.
+
+9) Blocked behavior:
+   - If front < STOP_DIST or projected forward point is occupied:
+       v = 0
+       pick turn direction using left vs right clearance from sensor rays
+       w = +/-W_TURN
+   - Minimal stuck breaker allowed:
+       if almost no motion for ~40 steps, force a decisive turn for a few steps, then resume pursuit.
+
+10) Next-step occupancy check should be short projection:
+    proj = min(12, max(4, 0.25*V_BASE*dt))
+    check (x + proj*cos(heading), y + proj*sin(heading))
+
+11) Update robot and record at every step:
+    speeds = displacement/dt as float.
+
+12) If not headless: draw and handle quit.
+
+Return dict schema ALWAYS.
+
+===========================================================================
+main FUNCTION
+===========================================================================
+def main():
+    run_episode(max_steps=2000, dt=0.05, headless=False)
+
+if __name__ == "__main__":
+    main()
+
+===========================================================================
+CONTEXT (do not print; use as reference)
+===========================================================================
+robot.py:
+$ROBOT_PY_TEXT
+
+params.json:
+$PARAMS_JSON_TEXT
+
+# === AUTO_REPAIR_RULES_BEGIN ===
+- Optimize initial distance check: Before evaluation, reduce `d0` by setting `d0 = max(d0 - 150, 0)`.
+- Adjust progress when stuck: If `dmin < 0.7 * d0`, increment `target_speed` by `1.0` every `100` steps until `progress > 60%`.
+- Improve goal-reaching attempts: When `min_goal_dist > 300`, adjust `approach_speed` by `3.0` every `50` steps until it reduces sufficiently below `300`.
+- Replace `scipy` with `numpy`: Use `numpy.linalg.norm` for distance calculations to completely eliminate `scipy` dependencies.
+- Strengthen error handling: Implement `try/except` to catch `RuntimeError` in sensor operations, logging the issue and resetting `sensor_reads` to `0`.
+- Balance sensor anomalies: On detection of anomalies, set `target_speed = 4.0` and `target_yaw_rate = 0.05` to regain stability.
+- Adaptive path correction: If progress is less than `50%` by step `300`, increase `target_speed` by `0.5` and modify `path` function every `20` steps for more efficient trajectory adjustments.
+# === AUTO_REPAIR_RULES_END ===
+
+
+""")
