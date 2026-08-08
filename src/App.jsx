@@ -157,6 +157,7 @@ const CONFIG = {
 };
 
 const SECTIONS = [
+  { id: "videos", label: "Video" },
   { id: "code", label: "Code" },
   { id: "abstract", label: "Abstract" },
   { id: "contributions", label: "Contributions" },
@@ -643,6 +644,15 @@ function AppInner() {
       </main>
 
       <div className="content">
+        {/* Single Video Card */}
+        <div id="videos" className="grid1">
+          {(CONFIG.videos || []).map((v) => (
+            <Card key={v.title} title={v.title} desc={v.desc} tags={v.tags}>
+              <VideoFrame media={v.media} size="small" />
+            </Card>
+          ))}
+        </div>
+
         <Section id="code" title="Code" underlineTitle centerTitle>
           <div className="grid2">
             {(CONFIG.codeCases || []).map((c) => (
